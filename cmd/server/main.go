@@ -49,15 +49,33 @@ func (s *server) HelloClientStream(stream hellopb.GreetingService_HelloClientStr
 	for {
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
-			msg := fmt.Sprintf("Hello %v!", nameList)
+			message := fmt.Sprintf("Hello %v!", nameList)
 			return stream.SendAndClose(&hellopb.HelloResponse{
-				Message: msg,
+				Message: message,
 			})
 		}
 		if err != nil {
-			fmt.Println(err)
+			return err
 		}
 		nameList = append(nameList, req.GetName())
+	}
+}
+
+func (s *server) HelloBiStreams(stream hellopb.GreetingService_HelloBiStreamsServer) error {
+	for {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		message := fmt.Sprintf("Hello %v!\n", req.GetName())
+		if err := stream.Send(&hellopb.HelloResponse{
+			Message: message,
+		}); err != nil {
+			return err
+		}
 	}
 }
 
