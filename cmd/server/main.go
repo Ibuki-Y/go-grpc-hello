@@ -26,6 +26,13 @@ func NewMyServer() *server {
 }
 
 func (s *server) Hello(ctx context.Context, req *hellopb.HelloRequest) (*hellopb.HelloResponse, error) {
+	// stat := status.New(codes.Unknown, "unknown error occurred")
+	// stat, _ = stat.WithDetails(&errdetails.DebugInfo{
+	// 	Detail: "detail reason of err",
+	// })
+	// err := stat.Err()
+	// return nil, err
+
 	return &hellopb.HelloResponse{
 		Message: fmt.Sprintf("Hello, %s!", req.GetName()),
 	}, nil
@@ -86,7 +93,10 @@ func main() {
 		panic(err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(unaryServerInterceptor),
+		grpc.StreamInterceptor(streamServerInterceptor),
+	)
 	hellopb.RegisterGreetingServiceServer(s, NewMyServer())
 	reflection.Register(s) // サーバーリフレクションの設定
 
