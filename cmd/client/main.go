@@ -32,6 +32,8 @@ func main() {
 	address := os.Getenv("LOCAL_PORT")
 	conn, err := grpc.Dial(
 		address,
+		grpc.WithUnaryInterceptor(unaryClientInterceptor),
+		grpc.WithStreamInterceptor(streamClientInterceptor),
 		grpc.WithTransportCredentials(insecure.NewCredentials()), // コネクションでSSL/TLSを使用しない
 		grpc.WithBlock(), // コネクションが確立されるまで待機
 	)
