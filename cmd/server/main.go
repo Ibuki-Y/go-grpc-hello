@@ -14,6 +14,7 @@ import (
 	hellopb "mygrpc/pkg/grpc"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -32,6 +33,20 @@ func (s *server) Hello(ctx context.Context, req *hellopb.HelloRequest) (*hellopb
 	// })
 	// err := stat.Err()
 	// return nil, err
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		log.Println(md)
+	}
+
+	headerMD := metadata.New(map[string]string{"type": "unary", "from": "server", "in": "header"})
+	if err := grpc.SetHeader(ctx, headerMD); err != nil {
+		return nil, err
+	}
+
+	trailerMD := metadata.New(map[string]string{"type": "unary", "from": "server", "in": "trailer"})
+	if err := grpc.SetTrailer(ctx, trailerMD); err != nil {
+		return nil, err
+	}
 
 	return &hellopb.HelloResponse{
 		Message: fmt.Sprintf("Hello, %s!", req.GetName()),
@@ -69,6 +84,10 @@ func (s *server) HelloClientStream(stream hellopb.GreetingService_HelloClientStr
 }
 
 func (s *server) HelloBiStreams(stream hellopb.GreetingService_HelloBiStreamsServer) error {
+	if md, ok := metadata.FromIncomingContext(stream.Context()); ok {
+		log.Println(md)
+	}
+
 	for {
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
