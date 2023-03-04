@@ -92,8 +92,9 @@ func Hello() {
 	ctx := context.Background()
 	md := metadata.New(map[string]string{"type": "unary", "from": "client"})
 	ctx = metadata.NewOutgoingContext(ctx, md)
-	// Helloメソッドの実行 -> HelloResponse型のレスポンスを入手
-	res, err := client.Hello(ctx, req)
+
+	var header, trailer metadata.MD
+	res, err := client.Hello(ctx, req, grpc.Header(&header), grpc.Trailer(&trailer)) // Helloメソッドの実行 -> HelloResponse型のレスポンスを入手
 	if err != nil {
 		if stat, ok := status.FromError(err); ok {
 			fmt.Printf("code: %s\n", stat.Code())
@@ -103,6 +104,8 @@ func Hello() {
 			fmt.Println(err)
 		}
 	} else {
+		fmt.Println(header)
+		fmt.Println(trailer)
 		fmt.Println(res.GetMessage())
 	}
 }
@@ -203,7 +206,17 @@ func HelloBiStreams() {
 		}
 
 		// 受信処理
+		var headerMD metadata.MD
 		if !recvEnd {
+			if headerMD == nil {
+				headerMD, err = stream.Header()
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					fmt.Println(headerMD)
+				}
+			}
+
 			if res, err := stream.Recv(); err != nil {
 				if !errors.Is(err, io.EOF) {
 					fmt.Println(err)
@@ -214,4 +227,7 @@ func HelloBiStreams() {
 			}
 		}
 	}
+
+	trailerMD := stream.Trailer()
+	fmt.Println(trailerMD)
 }

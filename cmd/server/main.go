@@ -88,6 +88,19 @@ func (s *server) HelloBiStreams(stream hellopb.GreetingService_HelloBiStreamsSer
 		log.Println(md)
 	}
 
+	headerMD := metadata.New(map[string]string{"type": "stream", "from": "server", "in": "header"})
+	// (パターン1)すぐにヘッダーを送信したいならばこちら
+	// if err := stream.SendHeader(headerMD); err != nil {
+	// 	return err
+	// }
+	// (パターン2)本来ヘッダーを送るタイミングで送りたいならばこちら
+	if err := stream.SetHeader(headerMD); err != nil {
+		return err
+	}
+
+	trailerMD := metadata.New(map[string]string{"type": "stream", "from": "server", "in": "trailer"})
+	stream.SetTrailer(trailerMD)
+
 	for {
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
